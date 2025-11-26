@@ -1,18 +1,22 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardNavbar from '@/components/dashboard/Navbar';
 import GraphCanvas from '@/components/dashboard/GraphCanvas';
+import ListView from '@/components/dashboard/ListView';
+import TimelineView from '@/components/dashboard/TimelineView';
 import NodeDetail from '@/components/dashboard/NodeDetail';
 import AIChat from '@/components/dashboard/AIChat';
 import CommandPalette from '@/components/dashboard/CommandPalette';
 import Toolbar from '@/components/dashboard/Toolbar';
 import FilterPanel from '@/components/dashboard/FilterPanel';
+import SettingsModal from '@/components/dashboard/SettingsModal';
 import { useGraphStore } from '@/lib/store';
 
 export default function DashboardPage() {
-  const { toggleCommandPalette, toggleAIChat } = useGraphStore();
+  const { toggleCommandPalette, toggleAIChat, toggleFilterPanel, viewMode, fitView, autoLayout } = useGraphStore();
+  const [showSettings, setShowSettings] = useState(false);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -28,27 +32,82 @@ export default function DashboardPage() {
         e.preventDefault();
         toggleAIChat();
       }
+
+      // Filter: Ctrl+F
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault();
+        toggleFilterPanel();
+      }
+
+      // Fit View: F
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          fitView();
+        }
+      }
+
+      // Auto Layout: L
+      if (e.key === 'l' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          autoLayout();
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleCommandPalette, toggleAIChat]);
+  }, [toggleCommandPalette, toggleAIChat, toggleFilterPanel, fitView, autoLayout]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-bg-void">
-      {/* Background gradient mesh */}
-      <div className="absolute inset-0 bg-mesh pointer-events-none" />
+    <div className="relative h-screen w-screen overflow-hidden bg-black">
 
       {/* Main navigation */}
       <DashboardNavbar />
 
-      {/* Main content area - graph canvas */}
-      <main className="absolute inset-0 pt-16">
-        <GraphCanvas />
-      </main>
+      {/* Main content area - switches based on view mode */}
+      <AnimatePresence mode="wait">
+        {viewMode === 'graph' && (
+          <motion.main
+            key="graph"
+            className="absolute inset-0 pt-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <GraphCanvas />
+          </motion.main>
+        )}
+        {viewMode === 'list' && (
+          <motion.div
+            key="list"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ListView />
+          </motion.div>
+        )}
+        {viewMode === 'timeline' && (
+          <motion.div
+            key="timeline"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <TimelineView />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Toolbar */}
-      <Toolbar />
+      {/* Toolbar - only show in graph view */}
+      {viewMode === 'graph' && <Toolbar onOpenSettings={() => setShowSettings(true)} />}
 
       {/* Side panels */}
       <NodeDetail />
@@ -57,6 +116,7 @@ export default function DashboardPage() {
       <AIChat />
       <CommandPalette />
       <FilterPanel />
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Welcome toast - shows once */}
       <WelcomeToast />

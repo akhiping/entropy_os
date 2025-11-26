@@ -23,12 +23,13 @@ interface SimulationLink extends d3.SimulationLinkDatum<SimulationNode> {
   strength: number;
 }
 
-const nodeTypeColors: Record<NodeTypeEnum, { stroke: string; fill: string }> = {
-  repo: { stroke: '#667eea', fill: 'rgba(102, 126, 234, 0.2)' },
-  doc: { stroke: '#f093fb', fill: 'rgba(240, 147, 251, 0.2)' },
-  task: { stroke: '#4facfe', fill: 'rgba(79, 172, 254, 0.2)' },
-  ai_agent: { stroke: '#43e97b', fill: 'rgba(67, 233, 123, 0.2)' },
-  misc: { stroke: '#FFB800', fill: 'rgba(255, 184, 0, 0.2)' },
+// Intense neon colors for maximum visibility
+const nodeTypeColors: Record<NodeTypeEnum, { stroke: string; fill: string; glow: string }> = {
+  repo: { stroke: '#A855F7', fill: 'rgba(168, 85, 247, 0.6)', glow: '#A855F7' },      // Vivid purple
+  doc: { stroke: '#FF00FF', fill: 'rgba(255, 0, 255, 0.6)', glow: '#FF00FF' },        // Hot magenta
+  task: { stroke: '#00FFFF', fill: 'rgba(0, 255, 255, 0.6)', glow: '#00FFFF' },       // Cyan
+  ai_agent: { stroke: '#00FF88', fill: 'rgba(0, 255, 136, 0.7)', glow: '#00FF88' },   // Neon green
+  misc: { stroke: '#FFD700', fill: 'rgba(255, 215, 0, 0.6)', glow: '#FFD700' },       // Gold
 };
 
 export const GraphCanvas: React.FC = () => {
@@ -57,6 +58,8 @@ export const GraphCanvas: React.FC = () => {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
+  const [hasInitialFit, setHasInitialFit] = useState(false);
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
   // Update dimensions on resize
   useEffect(() => {
@@ -76,12 +79,20 @@ export const GraphCanvas: React.FC = () => {
   useEffect(() => {
     if (!svgRef.current || filteredNodes.length === 0) return;
 
+    // If we already have simulation nodes with positions, use them
+    const existingPositions = new Map(
+      simulationNodes.map((n) => [n.id, { x: n.x, y: n.y }])
+    );
+
     // Convert nodes to simulation nodes
-    const simNodes: SimulationNode[] = filteredNodes.map((node) => ({
-      ...node,
-      x: node.position?.x || dimensions.width / 2 + (Math.random() - 0.5) * 400,
-      y: node.position?.y || dimensions.height / 2 + (Math.random() - 0.5) * 400,
-    }));
+    const simNodes: SimulationNode[] = filteredNodes.map((node) => {
+      const existing = existingPositions.get(node.id);
+      return {
+        ...node,
+        x: existing?.x ?? node.position?.x ?? dimensions.width / 2 + (Math.random() - 0.5) * 400,
+        y: existing?.y ?? node.position?.y ?? dimensions.height / 2 + (Math.random() - 0.5) * 400,
+      };
+    });
 
     // Create links from edges
     const nodeIds = new Set(filteredNodes.map((n) => n.id));
@@ -94,21 +105,38 @@ export const GraphCanvas: React.FC = () => {
         strength: edge.strength,
       }));
 
-    // Create force simulation
+    // Stop any existing simulation
+    if (simulationRef.current) {
+      simulationRef.current.stop();
+    }
+
+    // Create force simulation with more stable settings
     const simulation = d3.forceSimulation<SimulationNode>(simNodes)
       .force('link', d3.forceLink<SimulationNode, SimulationLink>(simLinks)
         .id((d) => d.id)
-        .distance(150)
-        .strength((d) => d.strength * 0.3))
-      .force('charge', d3.forceManyBody().strength(-300))
-      .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2).strength(0.05))
-      .force('collision', d3.forceCollide().radius(60))
-      .force('x', d3.forceX(dimensions.width / 2).strength(0.02))
-      .force('y', d3.forceY(dimensions.height / 2).strength(0.02))
-      .alphaDecay(0.02)
-      .velocityDecay(0.4);
+        .distance(180)
+        .strength((d) => d.strength * 0.2))
+      .force('charge', d3.forceManyBody().strength(-400).distanceMax(500))
+      .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2).strength(0.03))
+      .force('collision', d3.forceCollide().radius(80).strength(0.8))
+      .force('x', d3.forceX(dimensions.width / 2).strength(0.01))
+      .force('y', d3.forceY(dimensions.height / 2).strength(0.01))
+      .alphaDecay(0.05) // Faster decay to stabilize quicker
+      .velocityDecay(0.6) // Higher friction to reduce jitter
+      .alphaMin(0.01); // Stop earlier
 
+    let tickCount = 0;
     simulation.on('tick', () => {
+      tickCount++;
+      // Only update every 2nd tick to reduce flickering
+      if (tickCount % 2 === 0 || simulation.alpha() < 0.1) {
+        setSimulationNodes([...simulation.nodes()]);
+        setSimulationLinks([...simLinks]);
+      }
+    });
+
+    // Stop simulation when stabilized
+    simulation.on('end', () => {
       setSimulationNodes([...simulation.nodes()]);
       setSimulationLinks([...simLinks]);
     });
@@ -118,7 +146,53 @@ export const GraphCanvas: React.FC = () => {
     return () => {
       simulation.stop();
     };
-  }, [filteredNodes, edges, dimensions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredNodes.length, edges.length, dimensions]);
+
+  // Fit all nodes to view
+  const fitToView = useCallback(() => {
+    if (!svgRef.current || !zoomRef.current || simulationNodes.length === 0) return;
+
+    const svg = d3.select(svgRef.current);
+    const padding = 100;
+
+    // Calculate bounds of all nodes
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    simulationNodes.forEach((node) => {
+      if (node.x !== undefined && node.y !== undefined && !isNaN(node.x) && !isNaN(node.y)) {
+        minX = Math.min(minX, node.x);
+        maxX = Math.max(maxX, node.x);
+        minY = Math.min(minY, node.y);
+        maxY = Math.max(maxY, node.y);
+      }
+    });
+
+    if (minX === Infinity) return;
+
+    // Add padding for node size
+    minX -= 80;
+    maxX += 80;
+    minY -= 60;
+    maxY += 60;
+
+    const graphWidth = maxX - minX;
+    const graphHeight = maxY - minY;
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    // Calculate scale to fit
+    const scaleX = (dimensions.width - padding * 2) / graphWidth;
+    const scaleY = (dimensions.height - padding * 2) / graphHeight;
+    const scale = Math.min(scaleX, scaleY, 1.5); // Cap at 1.5x zoom
+
+    // Calculate translation to center
+    const translateX = dimensions.width / 2 - centerX * scale;
+    const translateY = dimensions.height / 2 - centerY * scale;
+
+    // Apply transform with animation
+    const newTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
+    svg.transition().duration(750).call(zoomRef.current.transform, newTransform);
+  }, [simulationNodes, dimensions]);
 
   // Setup zoom behavior
   useEffect(() => {
@@ -140,14 +214,23 @@ export const GraphCanvas: React.FC = () => {
       });
 
     svg.call(zoom);
-
-    // Reset to initial view
-    svg.call(zoom.transform, d3.zoomIdentity);
+    zoomRef.current = zoom;
 
     return () => {
       svg.on('.zoom', null);
     };
   }, [setZoom, setPan]);
+
+  // Auto fit to view when simulation stabilizes
+  useEffect(() => {
+    if (simulationNodes.length > 0 && !hasInitialFit) {
+      const timer = setTimeout(() => {
+        fitToView();
+        setHasInitialFit(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [simulationNodes.length, hasInitialFit, fitToView]);
 
   // Handle node drag
   const handleNodeDragStart = useCallback((nodeId: string, event: React.MouseEvent) => {
@@ -242,23 +325,10 @@ export const GraphCanvas: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing"
+      className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing bg-black"
       onClick={handleBackgroundClick}
     >
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-radial from-bg-surface/50 via-bg-void to-bg-void pointer-events-none" />
-      
-      {/* Grid pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at center, rgba(255,255,255,0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: `${50 * transform.k}px ${50 * transform.k}px`,
-          backgroundPosition: `${transform.x}px ${transform.y}px`,
-        }}
-      />
+      {/* Pure black background for maximum neon contrast */}
 
       <svg
         ref={svgRef}
@@ -267,23 +337,43 @@ export const GraphCanvas: React.FC = () => {
         className="w-full h-full"
       >
         <defs>
-          {/* Gradient definitions for links */}
+          {/* Intense neon glow filters for each color */}
           {Object.entries(nodeTypeColors).map(([type, colors]) => (
-            <linearGradient
-              key={type}
-              id={`link-gradient-${type}`}
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0%" stopColor={colors.stroke} stopOpacity={0.5} />
-              <stop offset="100%" stopColor={colors.stroke} stopOpacity={0.2} />
-            </linearGradient>
+            <React.Fragment key={type}>
+              <linearGradient
+                id={`link-gradient-${type}`}
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stopColor={colors.stroke} stopOpacity={1} />
+                <stop offset="100%" stopColor={colors.stroke} stopOpacity={0.8} />
+              </linearGradient>
+              
+              {/* Intense glow filter for this color */}
+              <filter id={`neon-glow-${type}`} x="-100%" y="-100%" width="300%" height="300%">
+                <feFlood floodColor={colors.glow} floodOpacity="1" result="flood" />
+                <feComposite in="flood" in2="SourceGraphic" operator="in" result="mask" />
+                <feGaussianBlur in="mask" stdDeviation="4" result="blur1" />
+                <feGaussianBlur in="mask" stdDeviation="8" result="blur2" />
+                <feGaussianBlur in="mask" stdDeviation="12" result="blur3" />
+                <feMerge>
+                  <feMergeNode in="blur3" />
+                  <feMergeNode in="blur2" />
+                  <feMergeNode in="blur1" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </React.Fragment>
           ))}
 
-          {/* Glow filter */}
-          <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          {/* Default intense glow filter */}
+          <filter id="neon-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="4" result="blur1" />
+            <feGaussianBlur stdDeviation="8" result="blur2" />
+            <feGaussianBlur stdDeviation="12" result="blur3" />
             <feMerge>
-              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="blur3" />
+              <feMergeNode in="blur2" />
+              <feMergeNode in="blur1" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
@@ -298,12 +388,12 @@ export const GraphCanvas: React.FC = () => {
             markerHeight="6"
             orient="auto-start-reverse"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.3)" />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.8)" />
           </marker>
         </defs>
 
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
-          {/* Render edges */}
+          {/* Render edges with intense neon glow */}
           <g className="edges">
             {simulationLinks.map((link, index) => {
               const source = link.source as SimulationNode;
@@ -312,28 +402,47 @@ export const GraphCanvas: React.FC = () => {
               if (typeof source === 'string' || typeof target === 'string') return null;
               
               const isConnected = connectedEdges.has(`e${index + 1}`);
-              const edgeColor = nodeTypeColors[source.type as NodeTypeEnum]?.stroke || '#666';
+              const sourceType = source.type as NodeTypeEnum;
+              const edgeColor = nodeTypeColors[sourceType]?.stroke || '#00FFFF';
+              const glowFilter = `url(#neon-glow-${sourceType})`;
               
               const pathD = getLinkPath(link);
               if (!pathD) return null;
               
               return (
-                <motion.path
-                  key={`edge-${source.id}-${target.id}`}
-                  d={pathD}
-                  fill="none"
-                  stroke={edgeColor}
-                  strokeWidth={isConnected ? 2.5 : 1.5}
-                  strokeDasharray={link.type === 'depends_on' ? '5,5' : undefined}
-                  markerEnd={link.type === 'depends_on' ? 'url(#arrow)' : undefined}
-                  initial={{ pathLength: 0, strokeOpacity: 0.1 }}
-                  animate={{
-                    pathLength: 1,
-                    strokeOpacity: isConnected ? 0.6 : 0.15,
-                    strokeWidth: isConnected ? 2.5 : 1.5,
-                  }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                />
+                <g key={`edge-${source.id}-${target.id}`}>
+                  {/* Outer glow layer */}
+                  <motion.path
+                    d={pathD}
+                    fill="none"
+                    stroke={edgeColor}
+                    strokeWidth={isConnected ? 8 : 5}
+                    strokeLinecap="round"
+                    filter={glowFilter}
+                    initial={{ pathLength: 0, strokeOpacity: 0 }}
+                    animate={{
+                      pathLength: 1,
+                      strokeOpacity: isConnected ? 0.8 : 0.6,
+                    }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                  {/* Core bright line */}
+                  <motion.path
+                    d={pathD}
+                    fill="none"
+                    stroke="#FFFFFF"
+                    strokeWidth={isConnected ? 2.5 : 1.5}
+                    strokeLinecap="round"
+                    strokeDasharray={link.type === 'depends_on' ? '12,6' : undefined}
+                    markerEnd={link.type === 'depends_on' ? 'url(#arrow)' : undefined}
+                    initial={{ pathLength: 0, strokeOpacity: 0 }}
+                    animate={{
+                      pathLength: 1,
+                      strokeOpacity: isConnected ? 1 : 0.9,
+                    }}
+                    transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+                  />
+                </g>
               );
             })}
           </g>
@@ -365,9 +474,9 @@ export const GraphCanvas: React.FC = () => {
                   isDimmed={isDimmed || false}
                   isDragging={draggedNode === node.id}
                   onSelect={() => selectNode(node.id)}
-                  onHover={(hovered) => hoverNode(hovered ? node.id : null)}
-                  onDragStart={(e) => handleNodeDragStart(node.id, e)}
-                  onDrag={(e) => handleNodeDrag(node.id, e)}
+                  onHover={(hovered: boolean) => hoverNode(hovered ? node.id : null)}
+                  onDragStart={(e: React.MouseEvent) => handleNodeDragStart(node.id, e)}
+                  onDrag={(e: React.MouseEvent) => handleNodeDrag(node.id, e)}
                   onDragEnd={() => handleNodeDragEnd(node.id)}
                 />
               );

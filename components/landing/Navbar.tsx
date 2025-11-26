@@ -195,12 +195,12 @@ export const Navbar: React.FC = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/dashboard">
+            <Link href="/auth/signin">
               <Button variant="ghost" size="sm">
                 Sign In
               </Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/auth/signup">
               <Button variant="primary" size="sm">
                 Get Started
               </Button>
@@ -261,7 +261,12 @@ export const Navbar: React.FC = () => {
                 
                 <div className="border-t border-white/10 my-4" />
                 
-                <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" size="lg" className="w-full mb-2">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" size="lg" className="w-full">
                     Get Started
                   </Button>

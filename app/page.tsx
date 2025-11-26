@@ -109,7 +109,7 @@ export default function LandingPage() {
               transition={{ delay: 0.2 }}
             >
               <motion.a
-                href="/dashboard"
+                href="/auth/signup"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-accent-energy text-bg-void font-semibold rounded-xl hover:shadow-glow-md transition-all duration-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}

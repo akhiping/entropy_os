@@ -50,7 +50,11 @@ const Divider: React.FC = () => (
   <div className="w-px h-6 bg-white/10" />
 );
 
-export const Toolbar: React.FC = () => {
+interface ToolbarProps {
+  onOpenSettings?: () => void;
+}
+
+export const Toolbar: React.FC<ToolbarProps> = ({ onOpenSettings }) => {
   const {
     zoomLevel,
     setZoom,
@@ -121,7 +125,7 @@ export const Toolbar: React.FC = () => {
         {/* Settings */}
         <ToolbarButton
           icon={Settings}
-          onClick={() => {}}
+          onClick={() => onOpenSettings?.()}
           tooltip="Graph Settings"
         />
       </div>

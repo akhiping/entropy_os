@@ -328,6 +328,9 @@ export const modalBackdrop: Variants = {
   },
 };
 
+// Alias for backwards compatibility
+export const backdropVariants = modalBackdrop;
+
 export const modalContent: Variants = {
   initial: { opacity: 0, scale: 0.95, y: 20 },
   animate: { 
@@ -347,6 +350,9 @@ export const modalContent: Variants = {
     transition: { duration: 0.2 },
   },
 };
+
+// Alias for backwards compatibility
+export const modalVariants = modalContent;
 
 export const commandPaletteVariants: Variants = {
   initial: { opacity: 0, scale: 0.98, y: -20 },

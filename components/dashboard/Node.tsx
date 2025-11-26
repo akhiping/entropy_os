@@ -29,40 +29,53 @@ interface GraphNodeProps {
   onDragEnd: () => void;
 }
 
+// Intense neon colors matching the edges
 const nodeConfig: Record<NodeTypeEnum, {
   icon: React.ElementType;
   gradient: string;
   glowColor: string;
+  borderColor: string;
+  neonColor: string;
   label: string;
 }> = {
   repo: {
     icon: GitBranch,
-    gradient: 'from-[#667eea] to-[#764ba2]',
-    glowColor: 'rgba(102, 126, 234, 0.5)',
+    gradient: 'from-[#A855F7] to-[#7C3AED]',
+    glowColor: 'rgba(168, 85, 247, 1)',
+    borderColor: '#A855F7',
+    neonColor: '#A855F7',
     label: 'Repository',
   },
   doc: {
     icon: FileText,
-    gradient: 'from-[#f093fb] to-[#f5576c]',
-    glowColor: 'rgba(240, 147, 251, 0.5)',
+    gradient: 'from-[#FF00FF] to-[#FF1493]',
+    glowColor: 'rgba(255, 0, 255, 1)',
+    borderColor: '#FF00FF',
+    neonColor: '#FF00FF',
     label: 'Document',
   },
   task: {
     icon: CheckCircle,
-    gradient: 'from-[#4facfe] to-[#00f2fe]',
-    glowColor: 'rgba(79, 172, 254, 0.5)',
+    gradient: 'from-[#00FFFF] to-[#00CED1]',
+    glowColor: 'rgba(0, 255, 255, 1)',
+    borderColor: '#00FFFF',
+    neonColor: '#00FFFF',
     label: 'Task',
   },
   ai_agent: {
     icon: Cpu,
-    gradient: 'from-[#43e97b] to-[#38f9d7]',
-    glowColor: 'rgba(67, 233, 123, 0.5)',
+    gradient: 'from-[#00FF88] to-[#00CC6A]',
+    glowColor: 'rgba(0, 255, 136, 1)',
+    borderColor: '#00FF88',
+    neonColor: '#00FF88',
     label: 'AI Agent',
   },
   misc: {
     icon: Folder,
-    gradient: 'from-[#FFB800] to-[#FF8C00]',
-    glowColor: 'rgba(255, 184, 0, 0.5)',
+    gradient: 'from-[#FFD700] to-[#FFA500]',
+    glowColor: 'rgba(255, 215, 0, 1)',
+    borderColor: '#FFD700',
+    neonColor: '#FFD700',
     label: 'Misc',
   },
 };
@@ -123,8 +136,8 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
     return null;
   };
 
-  const scale = isSelected ? 1.12 : isHovered ? 1.08 : 1;
-  const glowOpacity = isSelected ? 0.6 : isHovered ? 0.4 : 0.1;
+  const scale = isSelected ? 1.15 : isHovered ? 1.1 : 1;
+  const glowOpacity = isSelected ? 1 : isHovered ? 0.9 : 0.7;
 
   return (
     <motion.g
@@ -133,7 +146,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
       initial={{ scale: 0, opacity: 0 }}
       animate={{
         scale: isDragging ? 1.1 : scale,
-        opacity: isDimmed ? 0.3 : 1,
+        opacity: isDimmed ? 0.4 : 1,
       }}
       transition={{
         type: 'spring',
@@ -151,48 +164,104 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
       onMouseEnter={() => onHover(true)}
       onClick={handleClick}
     >
-      {/* Glow effect */}
+      {/* Intense neon glow filter definition */}
+      <defs>
+        <filter id={`neon-node-${node.id}`} x="-150%" y="-150%" width="400%" height="400%">
+          <feFlood floodColor={config.neonColor} floodOpacity="1" result="flood" />
+          <feComposite in="flood" in2="SourceGraphic" operator="in" result="mask" />
+          <feGaussianBlur in="mask" stdDeviation="8" result="blur1" />
+          <feGaussianBlur in="mask" stdDeviation="16" result="blur2" />
+          <feGaussianBlur in="mask" stdDeviation="24" result="blur3" />
+          <feMerge>
+            <feMergeNode in="blur3" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="blur1" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <linearGradient id={`node-bg-${node.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="rgba(20, 20, 30, 0.95)" />
+          <stop offset="100%" stopColor="rgba(10, 10, 15, 0.98)" />
+        </linearGradient>
+        <linearGradient id={`node-stroke-${node.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={config.borderColor} stopOpacity={1} />
+          <stop offset="50%" stopColor={config.borderColor} stopOpacity={0.8} />
+          <stop offset="100%" stopColor={config.borderColor} stopOpacity={1} />
+        </linearGradient>
+      </defs>
+
+      {/* Outer intense glow */}
       <motion.ellipse
         cx={0}
         cy={0}
-        rx={70}
-        ry={50}
-        fill={config.glowColor}
-        initial={{ opacity: 0.1, scale: 1 }}
+        rx={100}
+        ry={70}
+        fill={config.neonColor}
+        initial={{ opacity: 0.4, scale: 1 }}
         animate={{
-          opacity: glowOpacity,
-          scale: isSelected || isHovered ? 1.2 : 1,
+          opacity: glowOpacity * 0.7,
+          scale: isSelected || isHovered ? 1.4 : 1.2,
+        }}
+        transition={{ duration: 0.3 }}
+        style={{ filter: 'blur(40px)' }}
+      />
+
+      {/* Middle glow */}
+      <motion.ellipse
+        cx={0}
+        cy={0}
+        rx={75}
+        ry={52}
+        fill={config.neonColor}
+        initial={{ opacity: 0.6, scale: 1 }}
+        animate={{
+          opacity: glowOpacity * 0.85,
+          scale: isSelected || isHovered ? 1.2 : 1.1,
         }}
         transition={{ duration: 0.3 }}
         style={{ filter: 'blur(20px)' }}
       />
 
-      {/* Node body - hexagonal/organic shape */}
-      <motion.path
-        d="M-60,-25 Q-65,0 -60,25 L-40,40 Q0,50 40,40 L60,25 Q65,0 60,-25 L40,-40 Q0,-50 -40,-40 Z"
-        fill="url(#node-bg)"
-        stroke={`url(#node-stroke-${node.type})`}
-        strokeWidth={isSelected ? 3 : 2}
+      {/* Inner glow */}
+      <motion.ellipse
+        cx={0}
+        cy={0}
+        rx={60}
+        ry={42}
+        fill={config.neonColor}
+        initial={{ opacity: 0.7, scale: 1 }}
         animate={{
-          strokeWidth: isSelected ? 3 : isHovered ? 2.5 : 2,
+          opacity: glowOpacity,
+          scale: isSelected || isHovered ? 1.1 : 1,
         }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.3 }}
+        style={{ filter: 'blur(10px)' }}
       />
 
-      {/* Inner gradient definitions */}
-      <defs>
-        <linearGradient id="node-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="rgba(28, 28, 36, 0.95)" />
-          <stop offset="100%" stopColor="rgba(20, 20, 25, 0.98)" />
-        </linearGradient>
-        <linearGradient id={`node-stroke-${node.type}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={config.glowColor.replace('0.5', '0.8')} />
-          <stop offset="50%" stopColor={config.glowColor.replace('0.5', '0.4')} />
-          <stop offset="100%" stopColor={config.glowColor.replace('0.5', '0.8')} />
-        </linearGradient>
-      </defs>
+      {/* Node body - hexagonal/organic shape with intense neon border */}
+      <motion.path
+        d="M-60,-25 Q-65,0 -60,25 L-40,40 Q0,50 40,40 L60,25 Q65,0 60,-25 L40,-40 Q0,-50 -40,-40 Z"
+        fill={`url(#node-bg-${node.id})`}
+        stroke={config.borderColor}
+        strokeWidth={isSelected ? 5 : 4}
+        filter={`url(#neon-node-${node.id})`}
+        animate={{
+          strokeWidth: isSelected ? 5 : isHovered ? 4.5 : 4,
+        }}
+        transition={{ duration: 0.2 }}
+        style={{ filter: `drop-shadow(0 0 15px ${config.neonColor}) drop-shadow(0 0 30px ${config.neonColor})` }}
+      />
+      
+      {/* Additional bright core stroke */}
+      <path
+        d="M-60,-25 Q-65,0 -60,25 L-40,40 Q0,50 40,40 L60,25 Q65,0 60,-25 L40,-40 Q0,-50 -40,-40 Z"
+        fill="none"
+        stroke="white"
+        strokeWidth={1.5}
+        strokeOpacity={0.6}
+      />
 
-      {/* Type badge */}
+      {/* Type badge with neon glow */}
       <g transform="translate(-50, -35)">
         <rect
           x={0}
@@ -200,13 +269,14 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
           width={35}
           height={16}
           rx={8}
-          fill="rgba(0,0,0,0.4)"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth={0.5}
+          fill="rgba(0,0,0,0.6)"
+          stroke={config.borderColor}
+          strokeWidth={1}
+          style={{ filter: `drop-shadow(0 0 4px ${config.neonColor})` }}
         />
         <foreignObject x={4} y={2} width={28} height={14}>
           <div className="flex items-center justify-center h-full">
-            <Icon className="w-3 h-3" style={{ color: config.glowColor.replace('0.5', '1') }} />
+            <Icon className="w-3 h-3" style={{ color: config.neonColor, filter: `drop-shadow(0 0 4px ${config.neonColor})` }} />
           </div>
         </foreignObject>
       </g>
@@ -227,23 +297,23 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
       <foreignObject x={-50} y={12} width={100} height={20}>
         <div className="flex items-center justify-center gap-2 h-full">
           {node.metadata.stars !== undefined && (
-            <div className="flex items-center gap-0.5 text-white/40">
+            <div className="flex items-center gap-0.5 text-white/70">
               <Star className="w-2.5 h-2.5 fill-accent-solar text-accent-solar" />
-              <span className="text-[9px]">{node.metadata.stars}</span>
+              <span className="text-[9px] font-medium">{node.metadata.stars}</span>
             </div>
           )}
           {node.metadata.language && (
-            <span className="text-[9px] text-white/40">{node.metadata.language}</span>
+            <span className="text-[9px] text-white/70 font-medium">{node.metadata.language}</span>
           )}
           {node.metadata.lastCommit && (
-            <div className="flex items-center gap-0.5 text-white/40">
+            <div className="flex items-center gap-0.5 text-white/70">
               <Clock className="w-2.5 h-2.5" />
-              <span className="text-[9px]">{node.metadata.lastCommit.split(' ')[0]}</span>
+              <span className="text-[9px] font-medium">{node.metadata.lastCommit.split(' ')[0]}</span>
             </div>
           )}
           {node.metadata.progress !== undefined && (
             <div className="flex items-center gap-1">
-              <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className="w-12 h-1.5 bg-white/20 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-accent-frost rounded-full"
                   initial={{ width: 0 }}
@@ -251,7 +321,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
                   transition={{ duration: 0.5, delay: 0.2 }}
                 />
               </div>
-              <span className="text-[9px] text-white/40">{node.metadata.progress}%</span>
+              <span className="text-[9px] text-white/70 font-medium">{node.metadata.progress}%</span>
             </div>
           )}
           {getStatusIndicator()}
@@ -272,42 +342,43 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
         </text>
       </g>
 
-      {/* AI Agent special effects */}
+      {/* AI Agent special effects - more intense */}
       {node.type === 'ai_agent' && (
         <>
           <motion.circle
-            r={65}
+            r={75}
             fill="none"
-            stroke={config.glowColor}
-            strokeWidth={1}
-            strokeDasharray="4 4"
+            stroke={config.neonColor}
+            strokeWidth={2}
+            strokeDasharray="8 4"
             animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            style={{ transformOrigin: 'center' }}
+            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+            style={{ transformOrigin: 'center', filter: `drop-shadow(0 0 8px ${config.neonColor})` }}
           />
           <motion.circle
-            r={3}
-            fill={config.glowColor.replace('0.5', '1')}
+            r={5}
+            fill={config.neonColor}
             animate={{
-              cx: [0, 30, 0, -30, 0],
-              cy: [-40, 0, 40, 0, -40],
+              cx: [0, 40, 0, -40, 0],
+              cy: [-50, 0, 50, 0, -50],
             }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+            style={{ filter: `drop-shadow(0 0 10px ${config.neonColor})` }}
           />
         </>
       )}
 
-      {/* Selected indicator ring */}
+      {/* Selected indicator ring - intense neon */}
       {isSelected && (
         <motion.ellipse
           cx={0}
           cy={0}
-          rx={70}
-          ry={55}
+          rx={80}
+          ry={62}
           fill="none"
-          stroke={config.glowColor.replace('0.5', '0.6')}
-          strokeWidth={2}
-          strokeDasharray="8 4"
+          stroke={config.neonColor}
+          strokeWidth={3}
+          strokeDasharray="12 6"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{
             opacity: 1,
@@ -317,9 +388,9 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
           transition={{
             opacity: { duration: 0.3 },
             scale: { duration: 0.3 },
-            rotate: { duration: 30, repeat: Infinity, ease: 'linear' },
+            rotate: { duration: 20, repeat: Infinity, ease: 'linear' },
           }}
-          style={{ transformOrigin: 'center' }}
+          style={{ transformOrigin: 'center', filter: `drop-shadow(0 0 12px ${config.neonColor})` }}
         />
       )}
     </motion.g>
