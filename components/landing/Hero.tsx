@@ -43,7 +43,7 @@ const Particle: React.FC<{ delay: number }> = ({ delay }) => {
       className="absolute w-1 h-1 bg-accent-energy/30 rounded-full"
       style={{ left: `${randomX}%`, bottom: '-10px' }}
       animate={{
-        y: [0, -window.innerHeight - 100],
+        y: [0, -(typeof window !== 'undefined' ? window.innerHeight : 1000) - 100],
         opacity: [0, 1, 1, 0],
         scale: [0.5, 1, 1, 0.5],
       }}

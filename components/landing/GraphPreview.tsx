@@ -10,6 +10,8 @@ interface PreviewNode {
   y: number;
   vx?: number;
   vy?: number;
+  fx?: number | null;
+  fy?: number | null;
   type: 'repo' | 'doc' | 'task' | 'ai';
   label: string;
 }
@@ -182,26 +184,29 @@ export const GraphPreview: React.FC = () => {
       .attr('stop-color', '#43e97b');
 
     // Create node groups
+    const dragBehavior = d3.drag<SVGGElement, PreviewNode>()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on('drag', (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      });
+
     const nodeGroup = g.append('g')
       .selectAll('g')
       .data(nodes)
       .join('g')
       .attr('cursor', 'pointer')
-      .call(d3.drag<SVGGElement, PreviewNode>()
-        .on('start', (event, d) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on('drag', (event, d) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on('end', (event, d) => {
-          if (!event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        }) as unknown as d3.DragBehavior<SVGGElement, SimulationNode, SimulationNode>);
+      // @ts-expect-error - D3 drag type incompatibility with selection data
+      .call(dragBehavior);
 
     // Node glow
     nodeGroup.append('circle')
@@ -219,12 +224,14 @@ export const GraphPreview: React.FC = () => {
       .attr('stroke-width', 1.5)
       .on('mouseenter', function(event, d) {
         setHoveredNode(d.id);
-        d3.select(this.parentNode)
-          .select('.node-glow')
-          .transition()
-          .duration(200)
-          .attr('opacity', 0.6)
-          .attr('r', 40);
+        if (this.parentNode) {
+          d3.select(this.parentNode as Element)
+            .select('.node-glow')
+            .transition()
+            .duration(200)
+            .attr('opacity', 0.6)
+            .attr('r', 40);
+        }
         d3.select(this)
           .transition()
           .duration(200)
@@ -232,12 +239,14 @@ export const GraphPreview: React.FC = () => {
       })
       .on('mouseleave', function() {
         setHoveredNode(null);
-        d3.select(this.parentNode)
-          .select('.node-glow')
-          .transition()
-          .duration(200)
-          .attr('opacity', 0.3)
-          .attr('r', 30);
+        if (this.parentNode) {
+          d3.select(this.parentNode as Element)
+            .select('.node-glow')
+            .transition()
+            .duration(200)
+            .attr('opacity', 0.3)
+            .attr('r', 30);
+        }
         d3.select(this)
           .transition()
           .duration(200)

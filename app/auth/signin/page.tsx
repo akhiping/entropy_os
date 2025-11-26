@@ -91,7 +91,7 @@ export default function SignInPage() {
           {/* Social Login */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <motion.button
-              onClick={() => handleSocialLogin('github')}
+              onClick={() => handleSocialLogin()}
               disabled={isLoading}
               className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
@@ -101,7 +101,7 @@ export default function SignInPage() {
               <span className="font-medium">GitHub</span>
             </motion.button>
             <motion.button
-              onClick={() => handleSocialLogin('google')}
+              onClick={() => handleSocialLogin()}
               disabled={isLoading}
               className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50"
               whileHover={{ scale: 1.02 }}

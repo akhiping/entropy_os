@@ -126,10 +126,9 @@ export const DashboardNavbar: React.FC = () => {
                 className="cursor-pointer"
                 readOnly
                 onFocus={() => {
-                  setSearchFocused(true);
                   toggleCommandPalette();
                 }}
-                onBlur={() => setSearchFocused(false)}
+                onBlur={() => {}}
               />
             </div>
           </div>

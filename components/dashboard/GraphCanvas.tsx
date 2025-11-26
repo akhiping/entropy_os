@@ -469,7 +469,7 @@ export const GraphCanvas: React.FC = () => {
                   isDragging={draggedNode === node.id}
                   onSelect={() => selectNode(node.id)}
                   onHover={(hovered: boolean) => hoverNode(hovered ? node.id : null)}
-                  onDragStart={(e: React.MouseEvent) => handleNodeDragStart(node.id, e)}
+                  onDragStart={() => handleNodeDragStart(node.id)}
                   onDrag={(e: React.MouseEvent) => handleNodeDrag(node.id, e)}
                   onDragEnd={() => handleNodeDragEnd(node.id)}
                 />

@@ -37,7 +37,7 @@ export interface Edge {
 }
 
 export interface FilterOptions {
-  types: NodeType[] | 'all'[];
+  types: (NodeType | 'all')[];
   dateRange: 'all' | 'today' | 'week' | 'month';
   search?: string;
 }

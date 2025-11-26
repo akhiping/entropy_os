@@ -1,11 +1,14 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
-import GraphPreview from '@/components/landing/GraphPreview';
 import Features from '@/components/landing/Features';
+
+// Dynamic import to prevent SSR issues with D3
+const GraphPreview = dynamic(() => import('@/components/landing/GraphPreview'), { ssr: false });
 
 // Footer component
 const Footer: React.FC = () => {
