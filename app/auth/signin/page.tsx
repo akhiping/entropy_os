@@ -13,7 +13,7 @@ import {
   Github,
   Chrome,
 } from 'lucide-react';
-import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export default function SignInPage() {
     }
   };
 
-  const handleSocialLogin = async (provider: string) => {
+  const handleSocialLogin = async () => {
     setIsLoading(true);
     // Simulate OAuth
     await new Promise((resolve) => setTimeout(resolve, 1000));

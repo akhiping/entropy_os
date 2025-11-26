@@ -12,7 +12,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon: Icon = Search, shortcut, error, variant = 'default', className = '', ...props }, ref) => {
+  ({ icon: Icon = Search, shortcut, error, className = '', ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
 
     return (
@@ -48,7 +48,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               w-full py-3 pr-4 bg-transparent
               text-white placeholder-white/40
               outline-none
-              ${Icon ? '' : 'pl-4'}
               ${shortcut ? 'pr-14' : ''}
             `}
             onFocus={() => setIsFocused(true)}

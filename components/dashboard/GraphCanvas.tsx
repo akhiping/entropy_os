@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import * as d3 from 'd3';
 import { useGraphStore, useFilteredNodes } from '@/lib/store';
-import { Node as NodeType, Edge, NodeType as NodeTypeEnum } from '@/lib/types';
+import { Node as NodeType, NodeType as NodeTypeEnum } from '@/lib/types';
 import GraphNode from './Node';
 
 interface SimulationNode extends NodeType {
@@ -44,10 +44,6 @@ export const GraphCanvas: React.FC = () => {
     hoveredNodeId,
     selectNode,
     hoverNode,
-    zoomLevel,
-    setZoom,
-    panOffset,
-    setPan,
   } = useGraphStore();
 
   const filteredNodes = useFilteredNodes();
@@ -209,8 +205,6 @@ export const GraphCanvas: React.FC = () => {
           y: event.transform.y,
           k: event.transform.k,
         });
-        setZoom(event.transform.k);
-        setPan({ x: event.transform.x, y: event.transform.y });
       });
 
     svg.call(zoom);
@@ -219,7 +213,7 @@ export const GraphCanvas: React.FC = () => {
     return () => {
       svg.on('.zoom', null);
     };
-  }, [setZoom, setPan]);
+  }, []);
 
   // Auto fit to view when simulation stabilizes
   useEffect(() => {
@@ -233,7 +227,7 @@ export const GraphCanvas: React.FC = () => {
   }, [simulationNodes.length, hasInitialFit, fitToView]);
 
   // Handle node drag
-  const handleNodeDragStart = useCallback((nodeId: string, event: React.MouseEvent) => {
+  const handleNodeDragStart = useCallback((nodeId: string) => {
     if (!simulationRef.current) return;
     
     setIsDragging(true);

@@ -8,7 +8,6 @@ import {
   CheckCircle,
   Cpu,
   Folder,
-  Star,
   Clock,
   ChevronRight,
   ArrowUpDown,

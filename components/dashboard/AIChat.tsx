@@ -19,7 +19,6 @@ import {
 import { useGraphStore, useSelectedNode } from '@/lib/store';
 import { ChatMessage } from '@/lib/types';
 import { modalBackdrop, modalContent, staggerContainer, staggerItem } from '@/lib/animations';
-import { aiSuggestions } from '@/lib/mockData';
 
 const SuggestedAction: React.FC<{
   icon: React.ElementType;

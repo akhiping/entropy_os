@@ -201,7 +201,7 @@ export const GraphPreview: React.FC = () => {
           if (!event.active) simulation.alphaTarget(0);
           d.fx = null;
           d.fy = null;
-        }) as any);
+        }) as unknown as d3.DragBehavior<SVGGElement, SimulationNode, SimulationNode>);
 
     // Node glow
     nodeGroup.append('circle')

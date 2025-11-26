@@ -192,7 +192,7 @@ export default function SignUpPage() {
     router.push('/dashboard');
   };
 
-  const handleSocialSignup = async (provider: string) => {
+  const handleSocialSignup = async () => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setStep('tools');

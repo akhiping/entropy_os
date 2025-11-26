@@ -154,7 +154,7 @@ export const FilterPanel: React.FC = () => {
                                 : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
                               }
                             `}
-                            onClick={() => setFilter({ dateRange: range.value as any })}
+                            onClick={() => setFilter({ dateRange: range.value as 'all' | 'today' | 'week' | 'month' })}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                           >

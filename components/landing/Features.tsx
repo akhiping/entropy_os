@@ -3,7 +3,7 @@
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Zap, Brain, Network, ArrowRight } from 'lucide-react';
-import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations';
+import { staggerContainer } from '@/lib/animations';
 
 interface Feature {
   icon: React.ElementType;

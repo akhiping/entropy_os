@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search,
   Sparkles,
   Bell,
   Grid3X3,
@@ -91,8 +90,6 @@ export const DashboardNavbar: React.FC = () => {
     toggleAIChat,
     toggleCommandPalette,
   } = useGraphStore();
-  
-  const [searchFocused, setSearchFocused] = useState(false);
 
   return (
     <motion.nav

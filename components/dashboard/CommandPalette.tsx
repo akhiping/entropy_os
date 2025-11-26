@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -20,8 +20,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useGraphStore, useFilteredNodes } from '@/lib/store';
-import { Node as NodeType, NodeType as NodeTypeEnum } from '@/lib/types';
-import { commandPaletteVariants, modalBackdrop, fadeInUp } from '@/lib/animations';
+import { NodeType as NodeTypeEnum } from '@/lib/types';
+import { commandPaletteVariants, modalBackdrop } from '@/lib/animations';
 
 interface CommandItem {
   id: string;
@@ -58,7 +58,6 @@ export const CommandPalette: React.FC = () => {
     sync,
     fitView,
     autoLayout,
-    setViewMode,
   } = useGraphStore();
   
   const allNodes = useFilteredNodes();
