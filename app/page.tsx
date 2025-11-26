@@ -1,45 +1,14 @@
 'use client';
 
 import React from 'react';
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
-import Features from '@/components/landing/Features';
-
-// Dynamic import to prevent SSR issues with D3
-const GraphPreview = dynamic(() => import('@/components/landing/GraphPreview'), { ssr: false });
-
-// Footer component
-const Footer: React.FC = () => {
-  return (
-    <footer className="relative py-12 px-6 border-t border-white/5">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-energy to-accent-frost" />
-          <span className="text-white/40 text-sm">
-            © 2025 Entropy • Built for the future of work
-          </span>
-        </div>
-        
-        <div className="flex items-center gap-6">
-          <a href="#" className="text-sm text-white/40 hover:text-white transition-colors">
-            Privacy
-          </a>
-          <a href="#" className="text-sm text-white/40 hover:text-white transition-colors">
-            Terms
-          </a>
-          <a href="#" className="text-sm text-white/40 hover:text-white transition-colors">
-            Twitter
-          </a>
-          <a href="#" className="text-sm text-white/40 hover:text-white transition-colors">
-            GitHub
-          </a>
-        </div>
-      </div>
-    </footer>
-  );
-};
+import FeaturesComplete from '@/components/landing/FeaturesComplete';
+import Pricing from '@/components/landing/Pricing';
+import DocsPreview from '@/components/landing/DocsPreview';
+import FooterComplete from '@/components/landing/FooterComplete';
+import BackToTop from '@/components/landing/BackToTop';
 
 export default function LandingPage() {
   return (
@@ -61,13 +30,14 @@ export default function LandingPage() {
       {/* Hero Section */}
       <Hero />
       
-      {/* Graph Preview */}
-      <section className="relative py-12 px-6">
-        <GraphPreview />
-      </section>
-      
       {/* Features Section */}
-      <Features />
+      <FeaturesComplete />
+      
+      {/* Pricing Section */}
+      <Pricing />
+      
+      {/* Documentation Preview Section */}
+      <DocsPreview />
       
       {/* Call to Action Section */}
       <section className="relative py-32 px-6">
@@ -139,7 +109,10 @@ export default function LandingPage() {
       </section>
       
       {/* Footer */}
-      <Footer />
+      <FooterComplete />
+
+      {/* Back to Top Button */}
+      <BackToTop />
     </main>
   );
 }
